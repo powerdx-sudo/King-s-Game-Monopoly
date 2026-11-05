@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>👑 國王遊戲大富翁 (自選棋子顏色版)</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #2c3e50, #41144f, #1a252f);
+      background-attachment: fixed;
+      margin: 0;
+      padding: 20px;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h1 { 
+      margin-bottom: 5px; 
+      color: #f39c12; 
+      font-size: 32px; 
+      text-shadow: 0 3px 10px rgba(243, 156, 18, 0.4);
+      letter-spacing: 2px;
+    }
+    p.subtitle { color: #bdc3c7; margin-top: 0; margin-bottom: 20px; font-size: 16px; }
+    
+    #setup-screen {
+      background: rgba(255, 255, 255, 0.95);
+      color: #333;
+      padding: 25px;
+      border-radius: 16px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+      max-width: 900px;
+      width: 100%;
+      margin-bottom: 20px;
+      border-top: 6px solid #e74c3c;
+    }
+    .setup-section { margin-bottom: 20px; }
+    
+    .player-inputs-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 10px;
+    }
+    .player-input-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #f8f9fa;
+      padding: 10px;
+      border-radius: 8px;
+      border: 2px solid #ddd;
+    }
+    .player-input-item input[type="text"] {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 15px;
+    }
+    .player-input-item input[type="color"] {
+      width: 35px;
+      height: 35px;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      background: none;
+    }
+
+    .board-config-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 10px;
+      background: #fdfefe;
+      padding: 15px;
+      border: 2px dashed #8e44ad;
+      border-radius: 8px;
+    }
+    .board-config-item {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .board-config-item label { font-size: 14px; font-weight: bold; color: #444; }
+    .board-config-item input {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      text-align: center;
+      font-size: 15px;
+      font-weight: bold;
+      color: #8e44ad;
+    }
+
+    .deck-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      margin-top: 10px;
+    }
+    @media (max-width: 768px) {
+      .deck-grid { grid-template-columns: 1fr; }
+      .board-config-grid { grid-template-columns: 1fr; }
+      .player-inputs-grid { grid-template-columns: 1fr; }
+    }
+    .deck-box {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .deck-box label { font-size: 14px; font-weight: bold; color: #333; }
+    .deck-box textarea {
+      width: 100%;
+      height: 140px;
+      padding: 10px;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 13px;
+      resize: vertical;
+      font-family: inherit;
+    }
+    
+    #game-screen {
+      display: none;
+      width: 100%;
+      max-width: 1450px;
+      flex-direction: row;
+      gap: 25px;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(13, 63px);
+      grid-template-rows: repeat(13, 63px);
+      gap: 2px;
+      background: #2c3e50;
+      padding: 6px;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+      border: 5px solid #f39c12;
+      position: relative;
+    }
+    
+    .cell {
+      background: #fff;
+      border-radius: 4px;
+      padding: 2px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      text-align: center;
+      position: relative;
+      box-sizing: border-box;
+      overflow: hidden;
+      box-shadow: inset 0 0 2px rgba(0,0,0,0.1);
+    }
+    .cell-number { 
+      font-weight: bold; 
+      color: #2c3e50; 
+      font-size: 11px;
+    }
+
+    /* 命運格 (藍底白驚嘆號對話框) */
+    .cell.cell-fate {
+      background: linear-gradient(135deg, #2980b9, #3498db);
+      color: white;
+    }
+    .cell.cell-fate .cell-number { color: #ecf0f1; }
+    .fate-badge {
+      background: #ffffff;
+      color: #2980b9;
+      font-weight: bold;
+      font-size: 13px;
+      width: 26px;
+      height: 20px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      margin-top: 1px;
+      position: relative;
+    }
+    .fate-badge::after {
+      content: "";
+      position: absolute;
+      bottom: -3px;
+      right: 3px;
+      border-width: 3px 3px 0;
+      border-style: solid;
+      border-color: #ffffff transparent;
+      display: block;
+      width: 0;
+    }
+
+    /* 機會格 (紅底白問號對話框) */
+    .cell.cell-chance {
+      background: linear-gradient(135deg, #c0392b, #e74c3c);
+      color: white;
+    }
+    .cell.cell-chance .cell-number { color: #ecf0f1; }
+    .chance-badge {
+      background: #ffffff;
+      color: #c0392b;
+      font-weight: bold;
+      font-size: 13px;
+      width: 26px;
+      height: 20px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      margin-top: 1px;
+      position: relative;
+    }
+    .chance-badge::after {
+      content: "";
+      position: absolute;
+      bottom: -3px;
+      left: 3px;
+      border-width: 3px 3px 0;
+      border-style: solid;
+      border-color: #ffffff transparent;
+      display: block;
+      width: 0;
+    }
+
+    .tokens-container {
+      display: flex;
+      gap: 1px;
+      flex-wrap: wrap;
+      justify-content: center;
+      min-height: 14px;
+    }
+    .token {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      color: white;
+      font-size: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    /* 中央資訊看板樣式 */
+    .center-dashboard {
+      grid-row: 4 / span 7;
+      grid-column: 4 / span 7;
+      background: linear-gradient(135deg, #fff9f0, #ffffff);
+      border: 4px solid #f39c12;
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 15px;
+      text-align: center;
+      box-sizing: border-box;
+      box-shadow: 0 0 25px rgba(243, 156, 18, 0.35), inset 0 0 12px rgba(243, 156, 18, 0.1);
+      z-index: 10;
+    }
+    .center-title { font-size: 19px; font-weight: bold; color: #d35400; margin-bottom: 6px; }
+    .center-dice { font-size: 16px; color: #2980b9; font-weight: bold; margin-bottom: 10px; }
+    .center-card-text { 
+      font-size: 15px; 
+      color: #2c3e50; 
+      line-height: 1.5; 
+      max-height: 140px; 
+      overflow-y: auto; 
+      width: 100%;
+      padding: 0 6px;
+      box-sizing: border-box;
+      word-break: break-all;
+      font-weight: 500;
+    }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      width: 280px;
+      flex-shrink: 0;
+    }
+    .panel {
+      background: rgba(255, 255, 255, 0.95);
+      color: #333;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+      font-size: 15px;
+    }
+    .panel h3 { margin-top: 0; font-size: 18px; color: #8e44ad; border-bottom: 2px solid #f4ecf7; padding-bottom: 8px; }
+    .player-card {
+      padding: 10px 12px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      border-left: 6px solid #ccc;
+      background: #f8f9fa;
+      font-size: 14px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    .player-card.active {
+      background: #f4ecf7;
+      border-left-width: 8px;
+      border-left-color: #8e44ad !important;
+      transform: scale(1.02);
+      transition: all 0.2s ease;
+    }
+    
+    button {
+      background: linear-gradient(135deg, #e74c3c, #c0392b);
+      color: white;
+      border: none;
+      padding: 14px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 17px;
+      font-weight: bold;
+      width: 100%;
+      box-shadow: 0 4px 15px rgba(231, 76, 60,.4);
+      transition: all 0.2s;
+    }
+    button:hover { 
+      background: linear-gradient(135deg, #c0392b, #a93226); 
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(231, 76, 60, 0.6);
+    }
+    button:disabled { background: #bdc3c7; cursor: not-allowed; box-shadow: none; transform: none; }
+  </style>
+</head>
+<body>
+
+  <h1>👑 國王遊戲大富翁</h1>
+
+
+  <!-- 設定畫面 -->
+  <div id="setup-screen">
+    <div class="setup-section">
+      <label><b>👥 選擇遊玩人數、自定義名字與棋子顏色 (2 - 4人)：</b></label>
+      <select id="player-count" onchange="updatePlayerInputs()" style="font-size: 15px; padding: 8px; margin-top: 8px; margin-bottom: 12px; width: 100%; border-radius: 6px; border: 1px solid #ccc;">
+        <option value="2">2 人</option>
+        <option value="3">3 人</option>
+        <option value="4" selected>4 人</option>
+      </select>
+      
+      <div class="player-inputs-grid" id="player-inputs-container"></div>
+    </div>
+
+    <!-- 版圖格子數量自定義設定 -->
+    <div class="setup-section">
+      <label><b>🎲 設定 48 格中的特殊格子數量（總和請勿超過 46 格）：</b></label>
+      <div class="board-config-grid">
+        <div class="board-config-item">
+          <label>🍀 機會格子數</label>
+          <input type="number" id="count-chance" value="8" min="0" max="20">
+        </div>
+        <div class="board-config-item">
+          <label>⚡ 命運格子數</label>
+          <input type="number" id="count-fate" value="8" min="0" max="20">
+        </div>
+        <div class="board-config-item">
+          <label>🛡️ 安全格子數</label>
+          <input type="number" id="count-safe" value="4" min="0" max="10">
+        </div>
+      </div>
+    </div>
+
+    <div class="setup-section">
+      <label><b>📝 自定義隨機題庫（每行一個題目）：</b></label>
+      <div class="deck-grid">
+        <div class="deck-box">
+          <label style="color:#d35400;">🎯 一般任務題庫</label>
+          <textarea id="task-deck">咬對方內褲至下1輪
+用嘴把對方脫掉身上任一件衣物。
+伏地挺身 10 下，需要69姿勢，且須碰觸到對方身體才算1下！
+擺出一種性感的pose。
+模仿1種，你認為貓最性感的姿勢。
+模模仿1種，你認為狗最性感的姿勢。
+罰喝一杯水或指定飲料。
+自慰1分鐘。
+自慰3分鐘，且任由其他人挑逗。
+用跳蛋按摩對方身體敏感部位1分鐘。
+親吻對方大腿內側。
+互餵對方喝酒或吃東西。
+舔對方耳朵。
+按對方要求穿上1件指定服裝。
+用嘴脫掉對方內褲。
+把屁股翹起來，讓對方打10秒。
+用絲襪蒙住自己眼睛，讓對方宰割1分鐘。
+在對方任1部位，寫下自己的名字。
+輕咬或舔咪咪1分鐘。
+用絲襪栓在脖子上，牽著舔對方指定位置1分鐘。
+互玩對方身體任何位置1分鐘。
+脫去身上任1件衣物。
+指定右邊的人幫你按摩 30 秒。
+蠟燭滴背部5下。
+原地轉圈 5 圈後金雞獨立 5 秒。</textarea>
+        </div>
+
+        <div class="deck-box">
+          <label style="color:#c0392b;">🍀 機會卡題庫</label>
+          <textarea id="chance-deck">指定右邊的人說一個冷笑話。
+獲得『免罰券』，本次免罰。
+反彈~再抽一次，本次逞罰由對方承擔。
+轉移~再抽一次，本次逞罰由無辜者承擔。
+指定全場所有人一起做鬼臉 5 秒。
+指定一人幫你按摩肩膀 1 分鐘。
+獲得國王特權：指定任意一人代替你受罰一次！</textarea>
+        </div>
+
+        <div class="deck-box">
+          <label style="color:#2980b9;">⚡ 命運卡題庫</label>
+          <textarea id="fate-deck">真心話：說出在場所有人裡誰最有異性緣？
+再抽1次，懲罰乘2倍。
+罰喝一杯特調苦茶或指定飲料。
+自拍一張醜照傳到群組。
+原地再擲一次骰子，懲罰加倍！</textarea>
+        </div>
+      </div>
+    </div>
+
+    <button onclick="startGame()" style="font-size: 18px; padding: 15px; margin-top: 10px;">🚀 開始派對狂歡！</button>
+  </div>
+
+  <!-- 遊戲主畫面 -->
+  <div id="game-screen">
+    <div class="board" id="board-grid"></div>
+    <div class="sidebar">
+      <div class="panel">
+        <h3>🎮 遊戲控制</h3>
+        <p id="turn-info" style="font-weight: bold; color: #8e44ad; margin-bottom: 10px; font-size: 16px;">輪到：玩家 1</p>
+        <button id="roll-btn" onclick="rollDice()">🎲 擲骰子 (1-6)</button>
+      </div>
+      <div class="panel">
+        <h3>👥 玩家狀態</h3>
+        <div id="players-status"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let boardData = [];
+    const totalCells = 48;
+
+    let players = [];
+    let currentTurn = 0;
+    let activePlayerCount = 4;
+    const defaultPlayerNames = ['玩家 1', '玩家 2', '玩家 3', '玩家 4'];
+    // 預設顏色
+    const defaultPlayerColors = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12'];
+
+    let customTaskDeck = [];
+    let customChanceDeck = [];
+    let customFateDeck = [];
+
+    function updatePlayerInputs() {
+      const countSelect = document.getElementById("player-count");
+      activePlayerCount = countSelect ? parseInt(countSelect.value) : 4;
+      const container = document.getElementById("player-inputs-container");
+      if (!container) return;
+
+      container.innerHTML = "";
+      for (let i = 0; i < activePlayerCount; i++) {
+        let div = document.createElement("div");
+        div.className = "player-input-item";
+        div.innerHTML = `
+          <span style="font-weight:bold; color:${defaultPlayerColors[i]};">P${i+1}</span>
+          <input type="text" id="p-name-${i}" value="${defaultPlayerNames[i]}" placeholder="輸入名字">
+          <input type="color" id="p-color-${i}" value="${defaultPlayerColors[i]}" title="選擇棋子顏色">
+        `;
+        container.appendChild(div);
+      }
+    }
+
+    updatePlayerInputs();
+
+    const gridPositions = [];
+    for (let c = 1; c <= 13; c++) gridPositions.push({r: 1, c: c});
+    for (let r = 2; r <= 12; r++) gridPositions.push({r: r, c: 13});
+    for (let c = 13; c >= 1; c--) gridPositions.push({r: 13, c: c});
+    for (let r = 12; r >= 2; r--) gridPositions.push({r: r, c: 1});
+
+    function startGame() {
+      try {
+        let numChance = parseInt(document.getElementById("count-chance").value) || 0;
+        let numFate = parseInt(document.getElementById("count-fate").value) || 0;
+        let numSafe = parseInt(document.getElementById("count-safe").value) || 0;
+
+        if (numChance + numFate + numSafe > 45) {
+          alert("設定的特殊格子總數過多！請確保剩餘空間足夠給一般任務與起點。");
+          return;
+        }
+
+        boardData = [];
+        for (let i = 0; i < totalCells; i++) {
+          if (i === 0) {
+            boardData.push({ id: i, type: "start" });
+          } else {
+            boardData.push({ id: i, type: "task" });
+          }
+        }
+
+        let placedChance = 0;
+        while (placedChance < numChance) {
+          let randIdx = Math.floor(Math.random() * (totalCells - 1)) + 1;
+          if (boardData[randIdx].type === "task") {
+            boardData[randIdx].type = "chance";
+            placedChance++;
+          }
+        }
+
+        let placedFate = 0;
+        while (placedFate < numFate) {
+          let randIdx = Math.floor(Math.random() * (totalCells - 1)) + 1;
+          if (boardData[randIdx].type === "task") {
+            boardData[randIdx].type = "fate";
+            placedFate++;
+          }
+        }
+
+        let placedSafe = 0;
+        while (placedSafe < numSafe) {
+          let randIdx = Math.floor(Math.random() * (totalCells - 1)) + 1;
+          if (boardData[randIdx].type === "task") {
+            boardData[randIdx].type = "safe";
+            placedSafe++;
+          }
+        }
+
+        let taskText = document.getElementById("task-deck").value;
+        let chanceText = document.getElementById("chance-deck").value;
+        let fateText = document.getElementById("fate-deck").value;
+
+        customTaskDeck = taskText.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+        customChanceDeck = chanceText.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+        customFateDeck = fateText.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+
+        if (customTaskDeck.length === 0) customTaskDeck = ["預設任務：大喊萬歲！"];
+        if (customChanceDeck.length === 0) customChanceDeck = ["預設機會：獲得一次免費機會！"];
+        if (customFateDeck.length === 0) customFateDeck = ["預設命運：罰喝一杯水！"];
+
+        let countSelect = document.getElementById("player-count");
+        activePlayerCount = countSelect ? parseInt(countSelect.value) : 4;
+        
+        players = [];
+        for (let i = 0; i < activePlayerCount; i++) {
+          let nameInput = document.getElementById(`p-name-${i}`);
+          let colorInput = document.getElementById(`p-color-${i}`);
+          
+          let pName = nameInput && nameInput.value.trim() !== "" ? nameInput.value.trim() : defaultPlayerNames[i];
+          let pColor = colorInput ? colorInput.value : defaultPlayerColors[i];
+
+          players.push({
+            id: i,
+            name: pName,
+            pos: 0,
+            color: pColor
+          });
+        }
+
+        currentTurn = 0;
+        document.getElementById("setup-screen").style.display = "none";
+        document.getElementById("game-screen").style.display = "flex";
+
+        renderBoard();
+        updateStatus();
+      } catch (err) {
+        alert("開始遊戲時發生錯誤：" + err.message);
+      }
+    }
+
+    function renderBoard(diceText = "🎲 請點擊擲骰子", cardTitle = "👑 國王遊戲", cardText = "準備開始挑戰！") {
+      const boardGrid = document.getElementById("board-grid");
+      if (!boardGrid) return;
+      boardGrid.innerHTML = "";
+
+      let cellMap = {};
+      boardData.forEach((data, index) => {
+        let pos = gridPositions[index];
+        if (pos) {
+          cellMap[`${pos.r}-${pos.c}`] = { data, index };
+        }
+      });
+
+      for (let r = 1; r <= 13; r++) {
+        for (let c = 1; c <= 13; c++) {
+          if (r >= 4 && r <= 10 && c >= 4 && c <= 10) {
+            if (r === 4 && c === 4) {
+              let centerDiv = document.createElement("div");
+              centerDiv.className = "center-dashboard";
+              centerDiv.innerHTML = `
+                <div class="center-title" id="dash-title">${cardTitle}</div>
+                <div class="center-dice" id="dash-dice">${diceText}</div>
+                <div class="center-card-text" id="dash-text">${cardText}</div>
+              `;
+              boardGrid.appendChild(centerDiv);
+            }
+            continue;
+          }
+
+          let cellInfo = cellMap[`${r}-${c}`];
+          if (cellInfo) {
+            let { data, index } = cellInfo;
+            let cellDiv = document.createElement("div");
+            cellDiv.className = "cell";
+            cellDiv.style.gridRow = r;
+            cellDiv.style.gridColumn = c;
+
+            let innerHTMLContent = "";
+            if (data.type === "start") {
+              cellDiv.style.background = "#f1c40f";
+              innerHTMLContent = `<div><div class="cell-number">#${index}</div><div class="cell-type-icon" style="font-size:12px;">👑</div></div>`;
+            } else if (data.type === "safe") {
+              cellDiv.style.background = "#e0f2f1";
+              innerHTMLContent = `<div><div class="cell-number">#${index}</div><div class="cell-type-icon" style="font-size:12px;">🛡️</div></div>`;
+            } else if (data.type === "chance") {
+              cellDiv.className += " cell-chance";
+              innerHTMLContent = `<div><div class="cell-number">#${index}</div><div style="display:flex; justify-content:center;"><div class="chance-badge">?</div></div></div>`;
+            } else if (data.type === "fate") {
+              cellDiv.className += " cell-fate";
+              innerHTMLContent = `<div><div class="cell-number">#${index}</div><div style="display:flex; justify-content:center;"><div class="fate-badge">!</div></div></div>`;
+            } else {
+              innerHTMLContent = `<div><div class="cell-number">#${index}</div><div class="cell-type-icon" style="font-size:12px;">🎯</div></div>`;
+            }
+
+            cellDiv.innerHTML = `
+              ${innerHTMLContent}
+              <div>
+                <div class="tokens-container" id="tokens-${index}"></div>
+              </div>
+            `;
+            boardGrid.appendChild(cellDiv);
+          }
+        }
+      }
+
+      players.forEach(p => {
+        let container = document.getElementById(`tokens-${p.pos}`);
+        if (container) {
+          let token = document.createElement("div");
+          token.className = "token";
+          token.style.backgroundColor = p.color; // 套用玩家自選的顏色
+          token.innerText = p.name.substring(0, 2);
+          token.title = p.name;
+          container.appendChild(token);
+        }
+      });
+    }
+
+    function updateStatus() {
+      let statusHtml = "";
+      players.forEach((p, i) => {
+        let activeClass = (i === currentTurn) ? "active" : "";
+        statusHtml += `
+          <div class="player-card ${activeClass}" style="border-left-color: ${p.color};">
+            <b style="color: ${p.color};">${p.name}</b><br>
+            目前位置：#${p.pos} 格
+          </div>
+        `;
+      });
+      document.getElementById("players-status").innerHTML = statusHtml;
+
+      let turnInfo = document.getElementById("turn-info");
+      turnInfo.innerText = `輪到：${players[currentTurn].name}`;
+      turnInfo.style.color = players[currentTurn].color;
+    }
+
+    function rollDice() {
+      let p = players[currentTurn];
+      let dice = Math.floor(Math.random() * 6) + 1;
+
+      let oldPos = p.pos;
+      p.pos = (p.pos + dice) % boardData.length;
+
+      let cell = boardData[p.pos];
+      let cardTitle = "";
+      let cardText = "";
+
+      if (cell.type === "chance") {
+        cardTitle = "🍀 機會盲盒";
+        cardText = getRandomFromDeck(customChanceDeck);
+      } else if (cell.type === "fate") {
+        cardTitle = "⚡ 命運盲盒";
+        cardText = getRandomFromDeck(customFateDeck);
+      } else if (cell.type === "safe" || cell.type === "start") {
+        cardTitle = "👑 安全過關";
+        cardText = `【${p.name}】停在安全區，平安無事，休息一回合～`;
+      } else {
+        cardTitle = "🎯 隨機任務挑戰";
+        cardText = getRandomFromDeck(customTaskDeck);
+      }
+
+      renderBoard(`🎲 ${p.name} 擲出：${dice} 點`, cardTitle, cardText);
+
+      currentTurn = (currentTurn + 1) % players.length;
+      updateStatus();
+    }
+
+    function getRandomFromDeck(deck) {
+      if (!deck || deck.length === 0) return "無自定義題目可用！";
+      let item = deck[Math.floor(Math.random() * deck.length)];
+      return `${players[currentTurn].name} 抽到：\n\n"${item}"`;
+    }
+  </script>
+</body>
+</html>
